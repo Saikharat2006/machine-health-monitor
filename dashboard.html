@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Machine Health Monitor</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&display=swap">
+<style>
+:root{--bg:#0a1018;--panel:#111a27;--line:#223148;--tx:#e6edf7;--mute:#8497b3;--ok:#3ddc97;--warn:#ffb84d;--bad:#ff6b6b;--off:#5b6b84;--acc:#6ea8ff}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Sora,system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--tx);padding:28px;max-width:1180px;margin:0 auto}
+header{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:22px}
+h1{font-size:26px;font-weight:700}
+header p{color:var(--mute);font-size:14px;margin-top:4px}
+#conn{font-size:13px;padding:7px 14px;border-radius:99px;border:1px solid var(--line);color:var(--mute)}
+#conn.on{color:var(--ok);border-color:var(--ok)}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-bottom:22px}
+.kpi{background:var(--panel);padding:16px 20px}
+.kpi span{font-size:13px;color:var(--mute)}
+.kpi b{display:block;font-size:30px;margin-top:4px}
+.unit{display:grid;grid-template-columns:120px 1.1fr 1.4fr 150px;gap:22px;align-items:center;background:var(--panel);border:1px solid var(--line);border-left:5px solid var(--off);border-radius:14px;padding:18px 20px;margin-bottom:14px;transition:border-color .3s}
+.unit.ok{border-left-color:var(--ok)}.unit.warn{border-left-color:var(--warn)}.unit.bad{border-left-color:var(--bad)}
+.unit.offline{opacity:.55}
+.ring{--p:0;--c:var(--off);width:104px;height:104px;border-radius:50%;background:conic-gradient(var(--c) calc(var(--p)*1%),#1b2638 0);display:grid;place-items:center;position:relative}
+.ring::before{content:"";position:absolute;inset:9px;border-radius:50%;background:var(--panel)}
+.ring b{position:relative;font-size:28px}
+.ring small{position:relative;display:block;font-size:11px;color:var(--mute);text-align:center;margin-top:-4px}
+.id h2{font-size:18px}
+.chip{display:inline-block;margin-top:6px;font-size:13px;font-weight:600;color:var(--c,var(--mute))}
+.id p{font-size:13px;color:var(--mute);margin-top:6px;min-height:34px}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--off);margin-right:6px}
+.dot.on{background:var(--ok)}
+.m{margin-bottom:9px}
+.m div{display:flex;justify-content:space-between;font-size:13px;color:var(--mute)}
+.m b{color:var(--tx);font-weight:600}
+.bar{height:5px;border-radius:3px;background:#1b2638;margin-top:4px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--acc);transition:width .4s}
+svg{width:100%;height:34px;margin-top:6px;color:var(--acc)}
+.ctl{display:grid;gap:8px}
+button{font:inherit;font-size:13px;padding:8px;border-radius:8px;border:1px solid var(--line);background:#16233a;color:var(--tx);cursor:pointer}
+button:hover{border-color:var(--acc)}
+button:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+button.stop{background:#3a1820;border-color:#6b2b36}
+button.fault{background:#3a2a14;border-color:#6b4a1f}
+.log{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 20px;margin-top:22px}
+.log h3{font-size:15px;margin-bottom:10px}
+.log ul{list-style:none;font-size:13px;color:var(--mute);max-height:170px;overflow:auto}
+.log li{padding:5px 0;border-bottom:1px solid var(--line)}
+.log li b{color:var(--tx);font-weight:600;margin-right:8px}
+
+/* Toast Container & Pop-up Styling */
+#toast-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.toast {
+  background: var(--panel);
+  color: var(--tx);
+  border: 1px solid var(--bad);
+  border-left: 6px solid var(--bad);
+  padding: 12px 18px;
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+  font-size: 14px;
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: all 0.3s ease;
+}
+.toast.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+.toast.warn {
+  border-color: var(--warn);
+  border-left-color: var(--warn);
+}
+
+@media(max-width:860px){.unit{grid-template-columns:1fr 1fr}.kpis{grid-template-columns:1fr}body{padding:16px}}
+</style>
+</head>
+<body>
+
+<div id="toast-container"></div>
+
+<header>
+  <div><h1>Machine Health Monitor</h1><p>Live motor telemetry, health scores and remote control over MQTT</p></div>
+  <span id="conn">Connecting to broker...</span>
+</header>
+<div class="kpis">
+  <div class="kpi"><span>Average health</span><b id="k1">--</b></div>
+  <div class="kpi"><span>Motors online</span><b id="k2">0 / 3</b></div>
+  <div class="kpi"><span>Motors needing attention</span><b id="k3">0</b></div>
+</div>
+<div id="units"></div>
+<div class="log"><h3>Event log</h3><ul id="log"></ul></div>
+
+<script src="https://cdn.jsdelivr.net/npm/mqtt@4.3.7/dist/mqtt.min.js"></script>
+<script>
+const PREFIX = "ce350_mhm_g1"; // same as machine_simulator.py
+const BROKER = "ws://broker.hivemq.com:8000/mqtt";
+const N = 3;
+const MAXV = {vib: 10, temp: 100, cur: 14};
+const online = {}, level = {}, statusLabel = {}, hist = {}, spark = {}, health = {};
+const alerted = {}; 
+
+const $ = id => document.getElementById(id);
+
+function showToast(message, type = "warn") {
+  const container = $("toast-container");
+  const toast = document.createElement("div");
+  toast.className = `toast ${type}`;
+  toast.innerText = message;
+  container.appendChild(toast);
+
+  setTimeout(() => toast.classList.add("show"), 10);
+
+  setTimeout(() => {
+    toast.classList.remove("show");
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
+}
+
+$("units").innerHTML = [1, 2, 3].map(i => `
+<section class="unit offline" id="u${i}">
+  <div><div class="ring" id="r${i}"><b id="h${i}">--</b></div></div>
+  <div class="id">
+    <h2><span class="dot" id="d${i}"></span>Motor ${i}</h2>
+    <span class="chip" id="s${i}">Waiting for data</span>
+    <p id="p${i}">No trend yet</p>
+  </div>
+  <div>
+    <div class="m"><div>Vibration <b id="v${i}">--</b></div><div class="bar"><i id="vb${i}"></i></div></div>
+    <div class="m"><div>Temperature <b id="t${i}">--</b></div><div class="bar"><i id="tb${i}"></i></div></div>
+    <div class="m"><div>Current <b id="c${i}">--</b></div><div class="bar"><i id="cb${i}"></i></div></div>
+    <svg viewBox="0 0 200 34" preserveAspectRatio="none"><polyline id="sp${i}" fill="none" stroke="currentColor" stroke-width="2" points=""/></svg>
+  </div>
+  <div class="ctl">
+    <button class="stop" onclick="send(${i},'stop')">Shut down</button>
+    <button onclick="send(${i},'start')">Start</button>
+    <button class="fault" onclick="send(${i},'fault')">Inject fault</button>
+    <button onclick="send(${i},'reset')">Reset motor</button>
+  </div>
+</section>`).join("");
+
+function addLog(text) {
+  const li = document.createElement("li");
+  li.innerHTML = "<b>" + new Date().toLocaleTimeString() + "</b>" + text;
+  $("log").prepend(li);
+  while ($("log").children.length > 40) $("log").lastChild.remove();
+}
+
+function summary() {
+  const hs = Object.values(health);
+  $("k1").textContent = hs.length ? Math.round(hs.reduce((a, b) => a + b, 0) / hs.length) : "--";
+  $("k2").textContent = Object.values(online).filter(Boolean).length + " / " + N;
+  $("k3").textContent = Object.values(level).filter(l => l === "warn" || l === "bad").length;
+}
+
+function update(i, d) {
+  let lv = "ok", label = "Healthy", color = "var(--ok)";
+  if (d.state === "FAILED") { lv = "bad"; label = "Failed"; color = "var(--bad)"; }
+  else if (d.state === "STOPPED") { lv = "off"; label = "Shut down"; color = "var(--mute)"; }
+  else if (d.health < 40) { lv = "bad"; label = "Critical"; color = "var(--bad)"; }
+  else if (d.health < 75) { lv = "warn"; label = "Warning"; color = "var(--warn)"; }
+
+  health[i] = d.health;
+  (hist[i] = hist[i] || []).push({t: Date.now(), h: d.health});
+  if (hist[i].length > 8) hist[i].shift();
+  (spark[i] = spark[i] || []).push(d.health);
+  if (spark[i].length > 40) spark[i].shift();
+
+  let note = "No degradation trend";
+  const hh = hist[i];
+  if (d.state === "FAILED") {
+    note = "Motor tripped. Maintenance needed.";
+  } else if (d.state === "STOPPED") {
+    note = "Motor is shut down.";
+  } else if (hh.length > 4) {
+    const rate = (hh[0].h - d.health) / ((hh[hh.length - 1].t - hh[0].t) / 1000);
+    if (rate > 0.3 && d.health < 90) {
+      const timeRemaining = Math.round(Math.max(d.health - 10, 1) / rate);
+      note = "Failure predicted in about " + timeRemaining + " s. Consider shutting down.";
+    }
+  }
+
+  $("u" + i).className = "unit " + lv + (online[i] === false ? " offline" : "");
+  const r = $("r" + i);
+  r.style.setProperty("--p", d.health);
+  r.style.setProperty("--c", color);
+  $("h" + i).textContent = d.health;
+  $("s" + i).textContent = label;
+  $("s" + i).style.setProperty("--c", color);
+  $("p" + i).textContent = note;
+  $("v" + i).textContent = d.vib + " mm/s";
+  $("t" + i).textContent = d.temp + " C";
+  $("c" + i).textContent = d.cur + " A";
+  $("vb" + i).style.width = Math.min(100, d.vib / MAXV.vib * 100) + "%";
+  $("tb" + i).style.width = Math.min(100, d.temp / MAXV.temp * 100) + "%";
+  $("cb" + i).style.width = Math.min(100, d.cur / MAXV.cur * 100) + "%";
+  $("sp" + i).setAttribute("points", spark[i].map((h, k) => (k * 200 / 39).toFixed(1) + "," + (32 - h * 0.3).toFixed(1)).join(" "));
+
+  // Log whenever label changes (e.g., Critical -> Failed or Warning -> Critical)
+  if (statusLabel[i] !== label) {
+    if (statusLabel[i]) {
+      addLog("Motor " + i + " is now " + label.toLowerCase() + " (health " + d.health + ")");
+    }
+    statusLabel[i] = label;
+  }
+
+  level[i] = lv;
+
+  // Trigger alert once when motor enters warning or bad level
+  if ((lv === "warn" || lv === "bad") && !alerted[i]) {
+    showToast(`⚠️ Motor ${i} needs attention! Status: ${label}`, lv === "bad" ? "bad" : "warn");
+    alerted[i] = true;
+  }
+
+  if (lv === "ok" || lv === "off") {
+    alerted[i] = false;
+  }
+
+  summary();
+}
+
+const client = mqtt.connect(BROKER, {clientId: "dash_" + Math.random().toString(16).slice(2, 8), reconnectPeriod: 2000});
+client.on("connect", () => {
+  $("conn").textContent = "Broker connected";
+  $("conn").className = "on";
+  client.subscribe(PREFIX + "/+/telemetry");
+  client.subscribe(PREFIX + "/+/status");
+});
+client.on("close", () => {
+  $("conn").textContent = "Disconnected. Retrying...";
+  $("conn").className = "";
+});
+client.on("message", (topic, msg) => {
+  const p = topic.split("/");
+  const i = parseInt(p[1].replace("motor", ""), 10);
+  const s = msg.toString();
+  if (p[2] === "telemetry") {
+    try { update(i, JSON.parse(s)); } catch (e) { console.log(e); }
+  } else {
+    const on = s === "online";
+    if (online[i] !== on) addLog("Motor " + i + " is " + s);
+    online[i] = on;
+    $("d" + i).className = "dot" + (on ? " on" : "");
+    $("u" + i).classList.toggle("offline", !on);
+    summary();
+  }
+});
+
+function send(i, cmd) {
+  client.publish(PREFIX + "/motor" + i + "/cmd", cmd);
+  addLog("Command sent to motor " + i + ": " + cmd);
+}
+</script>
+</body>
+</html>
