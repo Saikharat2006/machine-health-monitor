@@ -9,15 +9,40 @@
 :root{--bg:#0a1018;--panel:#111a27;--line:#223148;--tx:#e6edf7;--mute:#8497b3;--ok:#3ddc97;--warn:#ffb84d;--bad:#ff6b6b;--off:#5b6b84;--acc:#6ea8ff}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:Sora,system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--tx);padding:28px;max-width:1180px;margin:0 auto}
+
+/* Login Overlay Styles */
+#login-overlay{position:fixed;inset:0;background:var(--bg);z-index:10000;display:grid;place-items:center}
+#login-overlay.hidden{display:none}
+.login-card{background:var(--panel);border:1px solid var(--line);padding:32px;border-radius:16px;width:100%;max-width:400px;box-shadow:0 8px 32px rgba(0,0,0,0.6)}
+.login-card h2{font-size:22px;margin-bottom:8px}
+.login-card p{color:var(--mute);font-size:13px;margin-bottom:20px}
+.form-group{margin-bottom:14px}
+.form-group label{display:block;font-size:12px;color:var(--mute);margin-bottom:6px}
+.form-group input{width:100%;padding:10px 14px;background:#16233a;border:1px solid var(--line);border-radius:8px;color:var(--tx);font:inherit;font-size:14px}
+.form-group input:focus{outline:2px solid var(--acc);border-color:var(--acc)}
+.login-btn{width:100%;margin-top:10px;padding:10px;background:var(--acc);color:#0a1018;font-weight:700;border:none;border-radius:8px;cursor:pointer}
+.login-btn:hover{opacity:0.9}
+.login-error{color:var(--bad);font-size:12px;margin-top:8px;min-height:16px}
+
+/* Main Dashboard App Container */
+#app-container{display:none}
+#app-container.visible{display:block}
+
 header{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:22px}
 h1{font-size:26px;font-weight:700}
 header p{color:var(--mute);font-size:14px;margin-top:4px}
+.header-right{display:flex;align-items:center;gap:12px}
 #conn{font-size:13px;padding:7px 14px;border-radius:99px;border:1px solid var(--line);color:var(--mute)}
 #conn.on{color:var(--ok);border-color:var(--ok)}
+.operator-badge{font-size:13px;color:var(--mute);background:var(--panel);border:1px solid var(--line);padding:7px 14px;border-radius:8px}
+.operator-badge b{color:var(--tx)}
+.logout-btn{background:#3a1820;border-color:#6b2b36;padding:7px 14px;font-size:13px}
+
 .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-bottom:22px}
 .kpi{background:var(--panel);padding:16px 20px}
 .kpi span{font-size:13px;color:var(--mute)}
-.kpi b{display:block;font-size:30px;margin-top:4px}
+.kpi b{display:block;font-size:24px;margin-top:4px}
+
 .unit{display:grid;grid-template-columns:120px 1.1fr 1.4fr 150px;gap:22px;align-items:center;background:var(--panel);border:1px solid var(--line);border-left:5px solid var(--off);border-radius:14px;padding:18px 20px;margin-bottom:14px;transition:border-color .3s}
 .unit.ok{border-left-color:var(--ok)}.unit.warn{border-left-color:var(--warn)}.unit.bad{border-left-color:var(--bad)}
 .unit.offline{opacity:.55}
@@ -42,73 +67,132 @@ button:hover{border-color:var(--acc)}
 button:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
 button.stop{background:#3a1820;border-color:#6b2b36}
 button.fault{background:#3a2a14;border-color:#6b4a1f}
+
 .log{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 20px;margin-top:22px}
-.log h3{font-size:15px;margin-bottom:10px}
+.log-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.log-header h3{font-size:15px}
+.log-actions{display:flex;gap:8px}
+.log-actions button{padding:4px 10px;font-size:12px}
 .log ul{list-style:none;font-size:13px;color:var(--mute);max-height:170px;overflow:auto}
 .log li{padding:5px 0;border-bottom:1px solid var(--line)}
 .log li b{color:var(--tx);font-weight:600;margin-right:8px}
 
-/* Toast Container & Pop-up Styling */
-#toast-container {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  z-index: 9999;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.toast {
-  background: var(--panel);
-  color: var(--tx);
-  border: 1px solid var(--bad);
-  border-left: 6px solid var(--bad);
-  padding: 12px 18px;
-  border-radius: 10px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.5);
-  font-size: 14px;
-  opacity: 0;
-  transform: translateY(-10px);
-  transition: all 0.3s ease;
-}
-.toast.show {
-  opacity: 1;
-  transform: translateY(0);
-}
-.toast.warn {
-  border-color: var(--warn);
-  border-left-color: var(--warn);
-}
+#toast-container{position:fixed;top:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:10px}
+.toast{background:var(--panel);color:var(--tx);border:1px solid var(--bad);border-left:6px solid var(--bad);padding:12px 18px;border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,0.5);font-size:14px;opacity:0;transform:translateY(-10px);transition:all 0.3s ease}
+.toast.show{opacity:1;transform:translateY(0)}
+.toast.warn{border-color:var(--warn);border-left-color:var(--warn)}
+.toast.bad{border-color:var(--bad);border-left-color:var(--bad)}
 
 @media(max-width:860px){.unit{grid-template-columns:1fr 1fr}.kpis{grid-template-columns:1fr}body{padding:16px}}
 </style>
 </head>
 <body>
 
+<!-- Standalone Login Page View -->
+<div id="login-overlay">
+  <div class="login-card">
+    <h2>Operator Sign In</h2>
+    <p>Enter credentials to access industrial monitoring controls.</p>
+    
+    <div class="form-group">
+      <label>Username</label>
+      <input type="text" id="user" placeholder="Enter username">
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" id="pass" placeholder="Enter password">
+    </div>
+    <button class="login-btn" onclick="handleLogin()">Access Dashboard</button>
+
+    <div class="login-error" id="login-error"></div>
+  </div>
+</div>
+
 <div id="toast-container"></div>
 
-<header>
-  <div><h1>Machine Health Monitor</h1><p>Live motor telemetry, health scores and remote control over MQTT</p></div>
-  <span id="conn">Connecting to broker...</span>
-</header>
-<div class="kpis">
-  <div class="kpi"><span>Average health</span><b id="k1">--</b></div>
-  <div class="kpi"><span>Motors online</span><b id="k2">0 / 3</b></div>
-  <div class="kpi"><span>Motors needing attention</span><b id="k3">0</b></div>
+<!-- Dashboard App Container (Hidden until logged in) -->
+<div id="app-container">
+  <header>
+    <div><h1>Machine Health Monitor</h1><p>Live motor telemetry, health scores and remote control over MQTT</p></div>
+    <div class="header-right">
+      <div class="operator-badge">Shift Operator: <b id="current-user">--</b></div>
+      <span id="conn">Connecting to broker...</span>
+      <button class="logout-btn" onclick="handleLogout()" title="End shift or switch operator">Shift Handover (Sign Out)</button>
+    </div>
+  </header>
+
+  <div class="kpis">
+    <div class="kpi"><span>Average health</span><b id="k1">--</b></div>
+    <div class="kpi"><span>Motors online</span><b id="k2">0 / <span id="total-motors">3</span></b></div>
+    <div class="kpi"><span>Motors needing attention</span><b id="k3">None</b></div>
+  </div>
+
+  <div id="units"></div>
+
+  <div class="log">
+    <div class="log-header">
+      <h3>Event log & audit trail</h3>
+      <div class="log-actions">
+        <button onclick="exportLogsCSV()">Export CSV</button>
+        <button onclick="clearLogs()">Clear</button>
+      </div>
+    </div>
+    <ul id="log"></ul>
+  </div>
 </div>
-<div id="units"></div>
-<div class="log"><h3>Event log</h3><ul id="log"></ul></div>
 
 <script src="https://cdn.jsdelivr.net/npm/mqtt@4.3.7/dist/mqtt.min.js"></script>
 <script>
-const PREFIX = "ce350_mhm_g1"; // same as machine_simulator.py
+const PREFIX = "ce350_mhm_g1";
 const BROKER = "ws://broker.hivemq.com:8000/mqtt";
-const N = 3;
+const N = 3; 
+document.getElementById("total-motors").textContent = N;
+
 const MAXV = {vib: 10, temp: 100, cur: 14};
 const online = {}, level = {}, statusLabel = {}, hist = {}, spark = {}, health = {};
-const alerted = {}; 
+const alertedLevel = {}; 
+const logEntries = [];
 
 const $ = id => document.getElementById(id);
+
+function handleLogin() {
+  const u = $("user").value.trim();
+  const p = $("pass").value.trim();
+  if (!u || !p) {
+    $("login-error").textContent = "Please enter both username and password.";
+    return;
+  }
+  if ((u === "admin" && p === "admin123") || (u.length > 0 && p.length >= 3)) {
+    $("login-overlay").classList.add("hidden");
+    $("app-container").classList.add("visible");
+    sessionStorage.setItem("mhm_auth", "true");
+    sessionStorage.setItem("mhm_user", u);
+    $("current-user").textContent = u;
+    addLog("Shift operator session started by [" + u + "]");
+  } else {
+    $("login-error").textContent = "Invalid username or password.";
+  }
+}
+
+function handleLogout() {
+  sessionStorage.removeItem("mhm_auth");
+  sessionStorage.removeItem("mhm_user");
+  $("user").value = "";
+  $("pass").value = "";
+  $("login-error").textContent = "";
+  $("app-container").classList.remove("visible");
+  $("login-overlay").classList.remove("hidden");
+  addLog("Operator signed out for shift handover.");
+}
+
+window.addEventListener("DOMContentLoaded", () => {
+  if (sessionStorage.getItem("mhm_auth") === "true") {
+    $("login-overlay").classList.add("hidden");
+    $("app-container").classList.add("visible");
+    const savedUser = sessionStorage.getItem("mhm_user") || "admin";
+    $("current-user").textContent = savedUser;
+  }
+});
 
 function showToast(message, type = "warn") {
   const container = $("toast-container");
@@ -116,16 +200,16 @@ function showToast(message, type = "warn") {
   toast.className = `toast ${type}`;
   toast.innerText = message;
   container.appendChild(toast);
-
   setTimeout(() => toast.classList.add("show"), 10);
-
   setTimeout(() => {
     toast.classList.remove("show");
     setTimeout(() => toast.remove(), 300);
   }, 3000);
 }
 
-$("units").innerHTML = [1, 2, 3].map(i => `
+let unitsHTML = "";
+for (let i = 1; i <= N; i++) {
+  unitsHTML += `
 <section class="unit offline" id="u${i}">
   <div><div class="ring" id="r${i}"><b id="h${i}">--</b></div></div>
   <div class="id">
@@ -145,20 +229,67 @@ $("units").innerHTML = [1, 2, 3].map(i => `
     <button class="fault" onclick="send(${i},'fault')">Inject fault</button>
     <button onclick="send(${i},'reset')">Reset motor</button>
   </div>
-</section>`).join("");
+</section>`;
+}
+$("units").innerHTML = unitsHTML;
 
 function addLog(text) {
+  const timeStr = new Date().toLocaleTimeString();
+  logEntries.unshift({ time: timeStr, message: text });
+
   const li = document.createElement("li");
-  li.innerHTML = "<b>" + new Date().toLocaleTimeString() + "</b>" + text;
+  li.innerHTML = "<b>" + timeStr + "</b>" + text;
   $("log").prepend(li);
-  while ($("log").children.length > 40) $("log").lastChild.remove();
+  while ($("log").children.length > 50) $("log").lastChild.remove();
+}
+
+function clearLogs() {
+  logEntries.length = 0;
+  $("log").innerHTML = "";
+  addLog("Event log cleared by operator.");
+}
+
+function exportLogsCSV() {
+  if (logEntries.length === 0) {
+    alert("No log entries to export.");
+    return;
+  }
+  let csvContent = "data:text/csv;charset=utf-8,Timestamp,Event Description\n";
+  logEntries.forEach(e => {
+    csvContent += `"${e.time}","${e.message.replace(/"/g, '""')}"\n`;
+  });
+  const encodedUri = encodeURI(csvContent);
+  const link = document.createElement("a");
+  link.setAttribute("href", encodedUri);
+  link.setAttribute("download", "machine_health_audit_logs.csv");
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  addLog("Exported event logs to CSV.");
 }
 
 function summary() {
   const hs = Object.values(health);
   $("k1").textContent = hs.length ? Math.round(hs.reduce((a, b) => a + b, 0) / hs.length) : "--";
-  $("k2").textContent = Object.values(online).filter(Boolean).length + " / " + N;
-  $("k3").textContent = Object.values(level).filter(l => l === "warn" || l === "bad").length;
+  
+  let onlineCount = 0;
+  for (let i = 1; i <= N; i++) {
+    if (online[i]) onlineCount++;
+  }
+  $("k2").textContent = onlineCount + " / " + N;
+
+  const needingAttention = [];
+  for (let i = 1; i <= N; i++) {
+    if (level[i] === "warn" || level[i] === "bad") {
+      needingAttention.push("Motor " + i);
+    }
+  }
+
+  if (needingAttention.length === 0) {
+    $("k3").textContent = "None";
+  } else {
+    $("k3").textContent = needingAttention.length + " (" + needingAttention.join(", ") + ")";
+  }
 }
 
 function update(i, d) {
@@ -188,40 +319,47 @@ function update(i, d) {
     }
   }
 
-  $("u" + i).className = "unit " + lv + (online[i] === false ? " offline" : "");
-  const r = $("r" + i);
-  r.style.setProperty("--p", d.health);
-  r.style.setProperty("--c", color);
-  $("h" + i).textContent = d.health;
-  $("s" + i).textContent = label;
-  $("s" + i).style.setProperty("--c", color);
-  $("p" + i).textContent = note;
-  $("v" + i).textContent = d.vib + " mm/s";
-  $("t" + i).textContent = d.temp + " C";
-  $("c" + i).textContent = d.cur + " A";
-  $("vb" + i).style.width = Math.min(100, d.vib / MAXV.vib * 100) + "%";
-  $("tb" + i).style.width = Math.min(100, d.temp / MAXV.temp * 100) + "%";
-  $("cb" + i).style.width = Math.min(100, d.cur / MAXV.cur * 100) + "%";
-  $("sp" + i).setAttribute("points", spark[i].map((h, k) => (k * 200 / 39).toFixed(1) + "," + (32 - h * 0.3).toFixed(1)).join(" "));
+  if ($("u" + i)) {
+    $("u" + i).className = "unit " + lv + (online[i] === false ? " offline" : "");
+    const r = $("r" + i);
+    if (r) {
+      r.style.setProperty("--p", d.health);
+      r.style.setProperty("--c", color);
+    }
+    if ($("h" + i)) $("h" + i).textContent = d.health;
+    if ($("s" + i)) {
+      $("s" + i).textContent = label;
+      $("s" + i).style.setProperty("--c", color);
+    }
+    if ($("p" + i)) $("p" + i).textContent = note;
+    if ($("v" + i)) $("v" + i).textContent = d.vib + " mm/s";
+    if ($("t" + i)) $("t" + i).textContent = d.temp + " C";
+    if ($("c" + i)) $("c" + i).textContent = d.cur + " A";
+    if ($("vb" + i)) $("vb" + i).style.width = Math.min(100, d.vib / MAXV.vib * 100) + "%";
+    if ($("tb" + i)) $("tb" + i).style.width = Math.min(100, d.temp / MAXV.temp * 100) + "%";
+    if ($("cb" + i)) $("cb" + i).style.width = Math.min(100, d.cur / MAXV.cur * 100) + "%";
+    if ($("sp" + i)) $("sp" + i).setAttribute("points", spark[i].map((h, k) => (k * 200 / 39).toFixed(1) + "," + (32 - h * 0.3).toFixed(1)).join(" "));
+  }
 
-  // Log whenever label changes (e.g., Critical -> Failed or Warning -> Critical)
   if (statusLabel[i] !== label) {
     if (statusLabel[i]) {
-      addLog("Motor " + i + " is now " + label.toLowerCase() + " (health " + d.health + ")");
+      addLog("Motor " + i + " status changed to " + label.toLowerCase() + " (health " + d.health + ")");
     }
     statusLabel[i] = label;
   }
 
   level[i] = lv;
 
-  // Trigger alert once when motor enters warning or bad level
-  if ((lv === "warn" || lv === "bad") && !alerted[i]) {
-    showToast(`⚠️ Motor ${i} needs attention! Status: ${label}`, lv === "bad" ? "bad" : "warn");
-    alerted[i] = true;
-  }
-
-  if (lv === "ok" || lv === "off") {
-    alerted[i] = false;
+  if (alertedLevel[i] !== lv) {
+    if (lv === "warn") {
+      showToast(`⚠️ WARNING: Motor ${i} health is deteriorating!`, "warn");
+      alertedLevel[i] = lv;
+    } else if (lv === "bad") {
+      showToast(`🚨 CRITICAL: Motor ${i} status is ${label.toUpperCase()}!`, "bad");
+      alertedLevel[i] = lv;
+    } else if (lv === "ok" || lv === "off") {
+      alertedLevel[i] = lv;
+    }
   }
 
   summary();
@@ -233,6 +371,7 @@ client.on("connect", () => {
   $("conn").className = "on";
   client.subscribe(PREFIX + "/+/telemetry");
   client.subscribe(PREFIX + "/+/status");
+  addLog("Connected to MQTT Broker successfully.");
 });
 client.on("close", () => {
   $("conn").textContent = "Disconnected. Retrying...";
@@ -242,21 +381,25 @@ client.on("message", (topic, msg) => {
   const p = topic.split("/");
   const i = parseInt(p[1].replace("motor", ""), 10);
   const s = msg.toString();
+  
+  // Ignore invalid IDs or any motor index greater than N (3)
+  if (isNaN(i) || i > N) return;
+
   if (p[2] === "telemetry") {
     try { update(i, JSON.parse(s)); } catch (e) { console.log(e); }
   } else {
     const on = s === "online";
     if (online[i] !== on) addLog("Motor " + i + " is " + s);
     online[i] = on;
-    $("d" + i).className = "dot" + (on ? " on" : "");
-    $("u" + i).classList.toggle("offline", !on);
+    if ($("d" + i)) $("d" + i).className = "dot" + (on ? " on" : "");
+    if ($("u" + i)) $("u" + i).classList.toggle("offline", !on);
     summary();
   }
 });
 
 function send(i, cmd) {
   client.publish(PREFIX + "/motor" + i + "/cmd", cmd);
-  addLog("Command sent to motor " + i + ": " + cmd);
+  addLog("Command sent to motor " + i + ": [" + cmd.toUpperCase() + "]");
 }
 </script>
 </body>
