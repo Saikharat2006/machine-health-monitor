@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "author": "Uri Shaked",
+  "editor": "wokwi",
+  "parts": [
+    { "type": "board-esp32-devkit-c-v4", "id": "esp", "top": -37.58, "left": -96.37, "attrs": {} },
+    { "type": "wokwi-dht22", "id": "dht1", "top": -32.2, "left": 40.16, "attrs": {} },
+    { "type": "wokwi-mpu6050", "id": "mpu1", "top": -60, "left": 170, "attrs": {} },
+    { "type": "wokwi-potentiometer", "id": "pot1", "top": 70, "left": 170, "attrs": {} },
+    { "type": "wokwi-resistor", "id": "r1", "top": 110, "left": 40, "attrs": { "value": "220" } },
+    { "type": "wokwi-led", "id": "led1", "top": 150, "left": 60, "attrs": { "color": "green" } }
+  ],
+  "connections": [
+    [ "esp:TX", "$serialMonitor:RX", "", [] ],
+    [ "esp:RX", "$serialMonitor:TX", "", [] ],
+    [ "dht1:VCC", "esp:3V3", "red", [ "v109.3", "h-170.36", "v-200.78" ] ],
+    [ "dht1:SDA", "esp:15", "green", [ "v0" ] ],
+    [ "dht1:GND", "esp:GND.1", "black", [ "v99.7", "h-189.56", "v-66.38" ] ],
+    [ "mpu1:VCC", "esp:3V3", "red", [] ],
+    [ "mpu1:GND", "esp:GND.1", "black", [] ],
+    [ "mpu1:SCL", "esp:22", "orange", [] ],
+    [ "mpu1:SDA", "esp:21", "blue", [] ],
+    [ "pot1:VCC", "esp:3V3", "red", [] ],
+    [ "pot1:GND", "esp:GND.1", "black", [] ],
+    [ "pot1:SIG", "esp:34", "purple", [] ],
+    [ "esp:2", "r1:1", "green", [] ],
+    [ "r1:2", "led1:A", "green", [] ],
+    [ "led1:C", "esp:GND.1", "black", [] ]
+  ],
+  "dependencies": {}
+}

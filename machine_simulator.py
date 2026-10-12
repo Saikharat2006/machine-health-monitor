@@ -96,7 +96,7 @@ class Motor:
         print(self.name, data)
 
 
-motors = [Motor(i) for i in range(1, MOTORS + 1)]
+motors = [Motor(i) for i in range(2, MOTORS + 1)]
 
 try:
     while True:
